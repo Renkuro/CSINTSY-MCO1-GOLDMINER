@@ -1,13 +1,14 @@
-public class Beacon extends Tile{
+public class Gold extends Tile{
 
-    public Beacon(int row, int column){  
-        super(row,column);
+    public Gold(int row, int column) {
+        super(row, column);
     }
+
 
     @Override
     public String toString(){
         if(super.getisOccupied()==false)
-            return "  B  ";
+            return "  G  ";
         else 
             return "  M  ";
     } 
