@@ -1,22 +1,22 @@
 public class Tile {
     
-    private int row;
-    private int column;
+    private int x;
+    private int y;
     private boolean isOccupied;
 
 
-    public Tile(int row, int column){  
-        this.row = row;
-        this.column = column;
+    public Tile(int x, int y){  
+        this.x = x;
+        this.y = y;
         isOccupied = false;
     }
     
-    public int getRow(){
-        return this.row;
+    public int getX(){
+        return x;
     }
 
-    public int getColumn(){
-        return this.column;
+    public int getY(){
+        return y;
     }
 
     public boolean getisOccupied(){
@@ -33,5 +33,6 @@ public class Tile {
             return "  ~  ";
         else 
             return "  M  ";
-    } 
+    }
+
 }

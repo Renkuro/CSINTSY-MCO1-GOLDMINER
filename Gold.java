@@ -1,7 +1,7 @@
 public class Gold extends Tile{
 
-    public Gold(int row, int column) {
-        super(row, column);
+    public Gold(int x, int y) {
+        super(x, y);
     }
 
 

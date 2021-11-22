@@ -1,7 +1,7 @@
 public class Pit extends Tile{
 
-    public Pit(int row, int column){  
-        super(row, column);
+    public Pit(int x, int y){  
+        super(x, y);
     }
 
     @Override
