@@ -4,6 +4,10 @@ public class Gold extends Tile{
         super(x, y);
     }
 
+    public Gold (Gold tile){
+        super(tile.getX(),tile.getY());
+    }
+
 
     @Override
     public String toString(){

@@ -6,6 +6,10 @@ public class Beacon extends Tile{
         super(x,y);
     }
 
+    public Beacon (Beacon tile){
+        super(tile.getX(),tile.getY());
+    }
+
     public int computeDistance(Board board){
         return (Math.abs(super.getX()-board.getGold().getX()) + Math.abs(super.getY()-board.getGold().getY()));
     }

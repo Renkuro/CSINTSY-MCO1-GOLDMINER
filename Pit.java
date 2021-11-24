@@ -4,6 +4,10 @@ public class Pit extends Tile{
         super(x, y);
     }
 
+    public Pit (Pit tile){
+        super(tile.getX(),tile.getY());
+    }
+
     @Override
     public String toString(){
         if(super.getisOccupied()==false)

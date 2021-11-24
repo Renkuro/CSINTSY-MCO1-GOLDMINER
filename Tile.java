@@ -1,4 +1,4 @@
-public class Tile {
+public class Tile implements Cloneable{
     
     private int x;
     private int y;
@@ -10,7 +10,13 @@ public class Tile {
         this.y = y;
         isOccupied = false;
     }
-    
+
+    public Tile (Tile tile){
+        this.x = tile.x;
+        this.y = tile.y;
+        isOccupied = false;
+    }
+
     public int getX(){
         return x;
     }
@@ -34,5 +40,14 @@ public class Tile {
         else 
             return "  M  ";
     }
+
+    @Override
+    public Object clone() {
+    try {
+        return (Tile) super.clone();
+    } catch (CloneNotSupportedException e) {
+        return new Tile(this.x,this.y);
+    }
+}
 
 }

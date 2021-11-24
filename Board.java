@@ -1,25 +1,67 @@
-import java.util.Scanner;
+import java.util.*;
 
 public class Board {
 
-    private Scanner sc = new Scanner (System.in);
+    private Board parent;
+    private ArrayList<Board> children = new ArrayList<>();
     private Tile[][] matrix;
     private Miner miner;
-    private int n;
-    private boolean isEnd, gameOver;
+    private boolean end=false, gameover=false;
     private Gold gold;
+    private int n;
+
+    private Scanner sc = new Scanner (System.in);
 
     public Board(int n){
 
         matrix = new Tile[n][n];
-        isEnd = false;
-        gameOver = false;
         this.n = n;
+        this.miner = new Miner(0,0,'E');
+        matrix[0][0] = new Tile(0,0);
+        matrix[0][0].setOccupied(true);
 
         initializeBeacon();
         initializePit();
         initializeGold();
         initializeBoard();
+    }
+
+    public Board(int x1, int y1, int x2, int y2, char direction, int n, Board parent){
+
+        
+        this.parent = parent;
+
+        this.matrix = new Tile[n][n];
+        this.gold = parent.getGold();
+        this.n = n;
+
+        for(int i=0;i<matrix.length;i++){
+            for(int j=0;j<matrix.length;j++){
+                if((parent.getMatrix())[i][j] instanceof Pit)
+                    this.matrix[i][j] = new Pit(((Pit)(parent.getMatrix())[i][j]));
+                else if((parent.getMatrix())[i][j] instanceof Beacon)
+                    this.matrix[i][j] = new Beacon(((Beacon)(parent.getMatrix())[i][j]));
+                else if((parent.getMatrix())[i][j] instanceof Gold)
+                    this.matrix[i][j] = new Gold(((Gold)(parent.getMatrix())[i][j]));
+                else
+                    this.matrix[i][j] = new Tile((parent.getMatrix())[i][j]);
+                if(i==x2 && j==y2)
+                    matrix[i][j].setOccupied(true);
+            }
+        }
+        
+        if(this.matrix[x2][y2] instanceof Gold)
+            this.end = true;
+        else if(this.matrix[x2][y2] instanceof Pit)
+            this.gameover = true;
+        
+        miner = new Miner(x2,y2,direction);
+    }
+
+
+
+    public void generateChildren(Board child){
+        children.add(child);
     }
 
 //initializing
@@ -116,11 +158,6 @@ public class Board {
         }
     }
 
-    public void setupMiner(Miner miner){
-        this.miner = miner;
-        matrix[miner.getX_position()][miner.getY_position()].setOccupied(true);
-    }
-
     private boolean beaconCheck(int row, int col){
         if((row+1)<n){
             if(matrix[row+1][col] instanceof Beacon)
@@ -163,22 +200,6 @@ public class Board {
 
 //getters and setters
 
-    public boolean getIsEnd(){
-        return isEnd;
-    }
-
-    public boolean getGameOver(){
-        return gameOver;
-    }
-    
-    public void setIsEnd(boolean b){
-        this.isEnd = b;
-    }
-
-    public void setGameOver(boolean b){
-        this.gameOver = b;
-    }
-
     public Gold getGold(){
         return gold;
     }
@@ -191,20 +212,74 @@ public class Board {
         return matrix;
     }
 
-    public void printBoard(){
-        for(int i=0;i<n;i++){
-            for(int j=0;j<n;j++){
-                System.out.print(matrix[i][j]);
+//getters and setters
+
+    public boolean getEnd(){
+        return end;
+    }
+
+    public boolean getGameOver(){
+        return gameover;
+    }
+    
+    public void setEnd(boolean b){
+        this.end = b;
+    }
+
+    public void setGameOver(boolean b){
+        this.gameover = b;
+    }
+    
+    public ArrayList<Board> getChildren(){
+        if(children==null)
+            return null;
+        return children;
+    }
+
+    public Board getChildrenIndex(int index){
+        if(children.get(index)==null)
+            return null;
+        return children.get(index);
+    }
+    
+    public int getX(){
+        return miner.getX_position();
+    }
+
+    public int getY(){
+        return miner.getY_position();
+    }
+
+    public char getDirection(){
+        return miner.getDirection();
+    }
+
+    public Board getParent(){
+        return parent;
+    }
+
+    public void printBoard(){   
+        System.out.println("miner direction: " + miner.getDirection());
+        for(int i=0;i<matrix.length;i++){
+            for(int j=0;j<matrix[i].length;j++){
+                System.out.print(this.matrix[i][j]);
             }
             System.out.println();
         }
     }
 
     public static void main (String args[]){
+        
+        Board board;
+        Queue<Board> queue = new LinkedList<Board>();
+        boolean state = false;
 
         Scanner sc = new Scanner(System.in);
         int boardsize=0;
         boolean valid=false;
+        Board temp = null;
+        char direction;
+        
 
         while(valid==false){
             System.out.print("Enter board size (8-64): ");
@@ -214,25 +289,71 @@ public class Board {
             else
                 System.out.println("Invalid input");
         }
-        Board board = new Board(boardsize);
-        Miner miner = new Miner(0,0);
-        board.setupMiner(miner);
-        miner.setupBoard(board);
-/*
-        while(!board.getIsEnd()){
 
+        board = new Board(boardsize);
+
+        queue.add(board);
+
+        while(state!=true){
+            temp = queue.poll();
+            temp.printBoard();
+
+            if(temp.getEnd()==true){
+                state = true;
+                break;
+            }
+            
+            direction = temp.getDirection();
+
+            if(temp.getGameOver()!=true){
+
+                //forward
+                int x,y;
+
+                x = temp.getX();
+                y = temp.getY();
+                
+                switch(direction){
+                    case 'N' : x--;
+                            break;
+                    case 'E' : y++;
+                            break;
+                    case 'S' : x++;
+                            break;
+                    case 'W' : y--;
+                            break;
+                    default: break;
+                }
+
+                if((x>=0 && x<boardsize)&&(y>=0 && y<boardsize))
+                    temp.generateChildren(new Board(temp.getX(),temp.getY(),x,y,direction,boardsize,temp));
+
+                //rotate
+                if(direction=='E')
+                    direction='S';
+                else if(direction=='S')
+                    direction='W';
+                else if(direction=='W')
+                    direction='N';
+                else
+                    direction='E';
+                temp.generateChildren(new Board(temp.getX(),temp.getY(),temp.getX(),temp.getY(),direction,boardsize,temp));
+                
+
+                //add children to queue
+                for(int i=0;i<temp.getChildren().size();i++){
+                    queue.add(temp.getChildrenIndex(i));
+                }
+            }
         }
-*/ 
-        
-        board.printBoard();
-        System.out.println("=-=-==-=-=-=-=-=-=-=-=-=-");
-        miner.scan();
-        miner.forward();
-        board.printBoard();
-        System.out.println("=-=-==-=-=-=-=-=-=-=-=-=-");
-        System.out.println("isEnd = " + board.isEnd);
-        System.out.println("gameOver = " + board.gameOver);
-        System.out.println("distance = " + miner.getDistance());
-        sc.close();
+        System.out.println("SUCCESS");
+        System.out.println("Path is: ");
+            while(temp.getParent()!=null){
+                temp.printBoard();
+                temp = temp.getParent();
+            }
+        temp.printBoard();
+
+      sc.close();
     }
 }
