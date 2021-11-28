@@ -1,6 +1,6 @@
 import java.util.*;
 
-public class Board implements Comparable<Board>{
+public class Board {
 
     private Board parent;
     private ArrayList<Board> children = new ArrayList<>();
@@ -9,7 +9,7 @@ public class Board implements Comparable<Board>{
     private boolean end=false, gameover=false;
     private Gold gold;
     private int n;
-    private int heuristics = 0;
+    private static BoardGUI gui = new BoardGUI();
 
     private Scanner sc = new Scanner (System.in);
 
@@ -25,13 +25,13 @@ public class Board implements Comparable<Board>{
         initializePit();
         initializeGold();
         initializeBoard();
+        Board.gui.minerGui(miner);
     }
 
-    public Board(int x, int y, char direction, int n, int heuristics, Board parent){
+    public Board(int x1, int y1, int x2, int y2, char direction, int n, Board parent){
 
         
         this.parent = parent;
-        this.heuristics = heuristics;
 
         this.matrix = new Tile[n][n];
         this.gold = parent.getGold();
@@ -47,18 +47,20 @@ public class Board implements Comparable<Board>{
                     this.matrix[i][j] = new Gold(((Gold)(parent.getMatrix())[i][j]));
                 else
                     this.matrix[i][j] = new Tile((parent.getMatrix())[i][j]);
-                if(i==x && j==y)
+                if(i==x2 && j==y2)
                     matrix[i][j].setOccupied(true);
             }
         }
         
-        if(this.matrix[x][y] instanceof Gold)
+        if(this.matrix[x2][y2] instanceof Gold)
             this.end = true;
-        else if(this.matrix[x][y] instanceof Pit)
+        else if(this.matrix[x2][y2] instanceof Pit)
             this.gameover = true;
         
-        miner = new Miner(x,y,direction);
+        miner = new Miner(x2,y2,direction);
     }
+
+
 
     public void generateChildren(Board child){
         children.add(child);
@@ -70,6 +72,8 @@ public class Board implements Comparable<Board>{
         double y;
         boolean valid;
         int row,col;
+
+
 
         y = n * 0.1;
         if ((int)y<1)
@@ -87,12 +91,12 @@ public class Board implements Comparable<Board>{
                         matrix[row-1][col-1]= new Beacon(row-1,col-1);
                         valid = true;
                         System.out.println("Input valid");
+                        gui.piecesGUI(matrix[row-1][col-1]);
+                        
                     }
                     else
                         System.out.println("Input invalid");
                 }
-                else
-                    System.out.println("Input invalid");
             }
         }
     }
@@ -114,16 +118,15 @@ public class Board implements Comparable<Board>{
                 System.out.print("Enter pit column: ");
                 col = sc.nextInt();
                 if(row<=n && row>=1 && col<=n && col>=1){
-                    if(matrix[row-1][col-1]==null && minerSurround(row-1, col-1)==false){
+                    if(matrix[row-1][col-1]==null && beaconCheck(row-1,col-1)==false){
                         matrix[row-1][col-1]= new Pit(row-1,col-1);
                         valid = true;
+                        gui.piecesGUI(matrix[row-1][col-1]);
                         System.out.println("Input valid");
                     }
                     else
                         System.out.println("Input invalid");
                 }
-                else
-                    System.out.println("Input invalid");
             }
         }
         
@@ -145,13 +148,13 @@ public class Board implements Comparable<Board>{
                     matrix[row-1][col-1]= new Gold(row-1,col-1);
                     valid = true;
                     this.gold = (Gold) matrix[row-1][col-1];
+                    gui.piecesGUI(matrix[row-1][col-1]);
                     System.out.println("Input valid");
+
                 }
                 else
                     System.out.println("Input invalid");
             }
-            else
-                System.out.println("Input invalid");
         }
     }
 
@@ -164,27 +167,46 @@ public class Board implements Comparable<Board>{
         }
     }
 
-    private boolean pitCheck(int row, int col){
-        if(row+1>=n || matrix[row+1][col] instanceof Pit)
-            if(row-1<0 || matrix[row-1][col] instanceof Pit)
-                if(col+1>=n || matrix[row][col+1] instanceof Pit)
-                    if(col-1<0 || matrix[row][col-1] instanceof Pit)
-                        return true;
+    private boolean beaconCheck(int row, int col){
+        if((row+1)<n){
+            if(matrix[row+1][col] instanceof Beacon)
+                return true;
+        }
+        if((row-1)>=0){
+            if(matrix[row-1][col] instanceof Beacon)
+                return true;
+        }
+        if((col+1<n)){
+            if(matrix[row][col+1] instanceof Beacon)
+                return true;
+        }
+        if((col-1)>0){
+            if(matrix[row][col-1] instanceof Beacon)
+                return true;
+        }
         return false;
     }
 
-    private boolean minerSurround(int row, int col){
-        if(row==1 && col == 0){
-            if(matrix[0][1] instanceof Pit)
+    private boolean pitCheck(int row, int col){
+        if((row+1)<n){
+            if(matrix[row+1][col] instanceof Pit)
                 return true;
         }
-        else if(row==0 && col==1){
-            if(matrix[1][0] instanceof Pit)
+        if((row-1)>=0){
+            if(matrix[row-1][col] instanceof Pit)
+                return true;
+        }
+        if((col+1<n)){
+            if(matrix[row][col+1] instanceof Pit)
+                return true;
+        }
+        if((col-1)>0){
+            if(matrix[row][col-1] instanceof Pit)
                 return true;
         }
         return false;
-   
     }
+
 //getters and setters
 
     public Gold getGold(){
@@ -199,6 +221,8 @@ public class Board implements Comparable<Board>{
         return matrix;
     }
 
+//getters and setters
+
     public boolean getEnd(){
         return end;
     }
@@ -206,7 +230,15 @@ public class Board implements Comparable<Board>{
     public boolean getGameOver(){
         return gameover;
     }
+    
+    public void setEnd(boolean b){
+        this.end = b;
+    }
 
+    public void setGameOver(boolean b){
+        this.gameover = b;
+    }
+    
     public ArrayList<Board> getChildren(){
         if(children==null)
             return null;
@@ -245,59 +277,18 @@ public class Board implements Comparable<Board>{
         }
     }
 
-    public int getHeuristics(){
-        return heuristics;
-    }
-
-    @Override
-    public int compareTo(Board board){
-        if(this.getHeuristics() < board.getHeuristics())
-            return -1;
-        else if(this.getHeuristics() > board.getHeuristics())
-            return 1;
-        return 0;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + getX();
-        result = prime * result + getY();
-        result = prime * result + (int)getDirection();
-        return result;
-    }
-
-    @Override
-    public String toString(){
-        return "Heuristic value is: " + this.getHeuristics();
-    }
-
-    @Override
-    public boolean equals(Object o){
-        if((this.miner.getDirection()==((Board)o).miner.getDirection()) && (this.miner.getX_position() == ((Board)o).miner.getX_position()) && (this.miner.getY_position() == ((Board)o).miner.getY_position()))
-            return true;
-        else
-            return false;
-    }
-
     public static void main (String args[]){
         
         Board board;
         Queue<Board> queue = new LinkedList<Board>();
-        PriorityQueue<Board> priorityQueue = new PriorityQueue<Board>();
-        HashSet<Board> memory = new HashSet<>();
         boolean state = false;
-        String search="";
 
         Scanner sc = new Scanner(System.in);
         int boardsize=0;
         boolean valid=false;
         Board temp = null;
         char direction;
-
-        ArrayList<Board> path = new ArrayList<Board>();
-        ArrayList<Board> solution = new ArrayList<Board>();
+        
 
         while(valid==false){
             System.out.print("Enter board size (8-64): ");
@@ -307,192 +298,77 @@ public class Board implements Comparable<Board>{
             else
                 System.out.println("Invalid input");
         }
-
+    //display gui
+    
+         
+        gui.displayGui(boardsize);
         board = new Board(boardsize);
         
-        sc.nextLine();
-        valid = false;
-        while(valid==false){
-            System.out.print("\nEnter the level of rational behavior you want to use (R/S): ");
-            search = sc.nextLine();
-            if(search.equalsIgnoreCase("R") || search.equalsIgnoreCase("S"))
-                valid = true;
-            else
-                System.out.println("Invalid input");
-        }
 
-        if(search.equalsIgnoreCase("R")){
-            queue.add(board);
-            while(state!=true){
-                temp = queue.poll();
-                path.add(temp);
-                temp.printBoard();
+        queue.add(board);
 
-                if(temp.getEnd()==true){
-                    state = true;
-                    break;
-                }
+        
+
+
+        while(state!=true){
+            temp = queue.poll();
+            temp.printBoard();
+
+            if(temp.getEnd()==true){
+                state = true;
+                break;
+            }
+            
+            direction = temp.getDirection();
+
+            if(temp.getGameOver()!=true){
+
+                //forward
+                int x,y;
+
+                x = temp.getX();
+                y = temp.getY();
                 
-                direction = temp.getDirection();
+                switch(direction){
+                    case 'N' : x--;
+                            break;
+                    case 'E' : y++;
+                            break;
+                    case 'S' : x++;
+                            break;
+                    case 'W' : y--;
+                            break;
+                    default: break;
+                }
 
-                if(temp.getGameOver()!=true){
+                if((x>=0 && x<boardsize)&&(y>=0 && y<boardsize))
+                    temp.generateChildren(new Board(temp.getX(),temp.getY(),x,y,direction,boardsize,temp));
 
-                    //forward
-                    int x,y;
+                //rotate
+                if(direction=='E')
+                    direction='S';
+                else if(direction=='S')
+                    direction='W';
+                else if(direction=='W')
+                    direction='N';
+                else
+                    direction='E';
+                temp.generateChildren(new Board(temp.getX(),temp.getY(),temp.getX(),temp.getY(),direction,boardsize,temp));
+                
 
-                    x = temp.getX();
-                    y = temp.getY();
-                    
-                    switch(direction){
-                        case 'N' : x--;
-                                break;
-                        case 'E' : y++;
-                                break;
-                        case 'S' : x++;
-                                break;
-                        case 'W' : y--;
-                                break;
-                        default: break;
-                    }
-
-                    if((x>=0 && x<boardsize)&&(y>=0 && y<boardsize))
-                        temp.generateChildren(new Board(x,y,direction,boardsize,0,temp));
-
-                    //rotate
-                    if(direction=='E')
-                        direction='S';
-                    else if(direction=='S')
-                        direction='W';
-                    else if(direction=='W')
-                        direction='N';
-                    else
-                        direction='E';
-                    temp.generateChildren(new Board(temp.getX(),temp.getY(),direction,boardsize,0,temp));
-                    
-
-                    //add children to queue
-                    for(int i=0;i<temp.getChildren().size();i++){
-                        queue.add(temp.getChildrenIndex(i));
-                    }
+                //add children to queue
+                for(int i=0;i<temp.getChildren().size();i++){
+                    queue.add(temp.getChildrenIndex(i));
                 }
             }
         }
-        else if(search.equalsIgnoreCase("S")){
-            priorityQueue.add(board);
-            int beaconPriority=0;
-            while(state!=true){
-                temp = priorityQueue.poll();
-                memory.add(temp);
-                path.add(temp);
-                temp.printBoard();
-
-                if(temp.getEnd()==true){
-                    state = true;
-                    break;
-                }
-                
-                direction = temp.getDirection();
-
-                if(temp.getGameOver()!=true){
-                    
-                    int x,y;
-                    boolean found = false;
-                    String scannedObject = "NULL";
-                    Heuristic heuristic = new Heuristic();
-                    Tile[][] matrix;
-                    x = temp.getX();
-                    y = temp.getY();
-                    matrix = temp.getMatrix();
-
-                    //scan
-                    while(!found){
-                        switch(direction){
-                            case 'N' : x--;
-                                    break;
-                            case 'E' : y++;
-                                    break;
-                            case 'S' : x++;
-                                    break;
-                            case 'W' : y--;
-                                    break;
-                            default: break;
-                        }
-                        if((x>=0 && x<boardsize)&&(y>=0 && y<boardsize)){
-                            if(matrix[x][y] instanceof Pit){
-                                scannedObject = "P";
-                                found=true;
-                            }
-                            else if(matrix[x][y] instanceof Gold){
-                                scannedObject = "G";
-                                found=true;
-                            }
-                            else if(matrix[x][y] instanceof Beacon){
-                                scannedObject = "B";
-                                found=true;
-                            }
-                        }
-                        else{
-                            scannedObject = "NULL"; break;
-                        }
-                    }
-
-                    //forward
-                    x = temp.getX();
-                    y = temp.getY();
-
-                    if(matrix[x][y] instanceof Beacon){
-                        if(((Beacon)matrix[x][y]).computeDistance(board)<=boardsize)
-                            beaconPriority = 1;
-                    }
-                    
-                    switch(direction){
-                        case 'N' : x--;
-                                break;
-                        case 'E' : y++;
-                                break;
-                        case 'S' : x++;
-                                break;
-                        case 'W' : y--;
-                                break;
-                        default: break;
-                    }
-
-                    if((x>=0 && x<boardsize)&&(y>=0 && y<boardsize))
-                        temp.generateChildren(new Board(x,y,direction,boardsize,heuristic.forwardHeuristic(scannedObject,beaconPriority),temp));
-
-                    //rotate
-                    if(direction=='E')
-                        direction='S';
-                    else if(direction=='S')
-                        direction='W';
-                    else if(direction=='W')
-                        direction='N';
-                    else
-                        direction='E';
-                    temp.generateChildren(new Board(temp.getX(),temp.getY(),direction,boardsize,heuristic.rotateHeuristic(scannedObject,beaconPriority),temp));
-                    
-
-                    //add children to queue
-                    for(int i=0;i<temp.getChildren().size();i++){
-                        if(!memory.contains(temp.getChildrenIndex(i)) && !priorityQueue.contains(temp.getChildrenIndex(i)))
-                            priorityQueue.add(temp.getChildrenIndex(i));
-                    }
-                }
-            }
-        }
-
         System.out.println("SUCCESS");
         System.out.println("Path is: ");
-        while(temp.getParent()!=null){
-            solution.add(temp);
-            temp = temp.getParent();
-        }
-        solution.add(temp);
-        Collections.reverse(solution);
-        for(int i=0;i<solution.size();i++){
-            solution.get(i).printBoard();
-        }
-        System.out.println(path.size());
+            while(temp.getParent()!=null){
+                temp.printBoard();
+                temp = temp.getParent();
+            }
+        temp.printBoard();
 
       sc.close();
     }
